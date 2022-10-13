@@ -41,43 +41,43 @@ Usage examples:
 
   - Basic shell session over http:
 
-      sudo python3 hoaxshell.py -s <your_ip>
+      sudo python3 shrekshell.py -s <your_ip>
       
   - Recommended usage to avoid detection (over http):
 	  
      # Hoaxshell utilizes an http header to transfer shell session info. By default, the header is given a random name which can be detected by regex-based AV rules. 
      # Use -H to provide a standard or custom http header name to avoid detection.
-     sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization"
+     sudo python3 shrekshell.py -s <your_ip> -i -H "Authorization"
      
      # The same but with --exec-outfile (-x)
-     sudo python3 hoaxshell.py -s <your_ip> -i -H "Authorization" -x "C:\\Users\\\\\\$env:USERNAME\.local\hack.ps1"
+     sudo python3 shrekshell.py -s <your_ip> -i -H "Authorization" -x "C:\\Users\\\\\\$env:USERNAME\.local\hack.ps1"
 
   - Encrypted shell session (https):
 	  
      # First you need to generate self-signed certificates:
      openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
-     sudo python3 hoaxshell.py -s <your_ip> -c </path/to/cert.pem> -k <path/to/key.pem>
+     sudo python3 shrekshell.py -s <your_ip> -c </path/to/cert.pem> -k <path/to/key.pem>
   
   - Encrypted shell session with a trusted certificate:
   
-     sudo python3 hoaxshell.py -s <your.domain.com> -t -c </path/to/cert.pem> -k <path/to/key.pem>
+     sudo python3 shrekshell.py -s <your.domain.com> -t -c </path/to/cert.pem> -k <path/to/key.pem>
 
   - Encrypted shell session with a tunneling tools:
   
-     sudo python3 hoaxshell.py -lt 
+     sudo python3 shrekshell.py -lt 
 
 	 OR 
 
-     sudo python3 hoaxshell.py -ng
+     sudo python3 shrekshell.py -ng
 
 
 '''
 )
 
-parser.add_argument("-s", "--server-ip", action="store", help = "Your hoaxshell server ip address or domain.")
+parser.add_argument("-s", "--server-ip", action="store", help = "Your shrekshell server ip address or domain.")
 parser.add_argument("-c", "--certfile", action="store", help = "Path to your ssl certificate.")
 parser.add_argument("-k", "--keyfile", action="store", help = "Path to the private key for your certificate.")
-parser.add_argument("-p", "--port", action="store", help = "Your hoaxshell server port (default: 8080 over http, 443 over https).", type = int)
+parser.add_argument("-p", "--port", action="store", help = "Your shrekshell server port (default: 8080 over http, 443 over https).", type = int)
 parser.add_argument("-f", "--frequency", action="store", help = "Frequency of cmd execution queue cycle (A low value creates a faster shell but produces more http traffic. *Less than 0.8 will cause trouble. default: 0.8s).", type = float)
 parser.add_argument("-i", "--invoke-restmethod", action="store_true", help = "Generate payload using the 'Invoke-RestMethod' instead of the default 'Invoke-WebRequest' utility.")
 parser.add_argument("-H", "--Header", action="store", help = "Hoaxshell utilizes a non-standard header to transfer the session id between requests. A random name is given to that header by default. Use this option to set a custom header name.")
@@ -208,7 +208,7 @@ def chill():
 
 
 # ------------------ Settings ------------------ #
-prompt = "hoaxshell > "
+prompt = "shrekshell > "
 quiet = True if args.quiet else False
 frequency = args.frequency if args.frequency else 0.8
 stop_event = Event()
@@ -532,10 +532,10 @@ def main():
 			try:
 				cwd = path.dirname(path.abspath(__file__))
 				print(f'[{INFO}] Pulling changes from the master branch...')
-				u = check_output(f'cd {cwd}&&git pull https://github.com/t3l3machus/hoaxshell main', shell=True).decode('utf-8')
+				u = check_output(f'cd {cwd}&&git pull https://github.com/t3l3machus/shrekshell main', shell=True).decode('utf-8')
 
 				if re.search('Updating', u):
-					print(f'[{INFO}] Update completed! Please, restart hoaxshell.')
+					print(f'[{INFO}] Update completed! Please, restart shrekshell.')
 					updated = True
 
 				elif re.search('Already up to date', u):
@@ -543,11 +543,11 @@ def main():
 					pass
 
 				else:
-					print(f'[{FAILED}] Something went wrong. Are you running hoaxshell from your local git repository?')
-					print(f'[{DEBUG}] Consider running "git pull https://github.com/t3l3machus/hoaxshell main" inside the project\'s directory.')
+					print(f'[{FAILED}] Something went wrong. Are you running shrekshell from your local git repository?')
+					print(f'[{DEBUG}] Consider running "git pull https://github.com/t3l3machus/shrekshell main" inside the project\'s directory.')
 
 			except:
-				print(f'[{FAILED}] Update failed. Consider running "git pull https://github.com/t3l3machus/hoaxshell main" inside the project\'s directory.')
+				print(f'[{FAILED}] Update failed. Consider running "git pull https://github.com/t3l3machus/shrekshell main" inside the project\'s directory.')
 
 			if updated:
 				sys.exit(0)
@@ -671,7 +671,7 @@ def main():
 			print(f'[{IMPORTANT}] {BOLD}Awaiting payload execution to initiate shell session...{END}')
 
 		else:
-			print(f'\r[{IMPORTANT}] Attempting to restore session. Listening for hoaxshell traffic...')
+			print(f'\r[{IMPORTANT}] Attempting to restore session. Listening for shrekshell traffic...')
 
 
 		# Command prompt
