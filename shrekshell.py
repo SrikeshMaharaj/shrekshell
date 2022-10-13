@@ -1,7 +1,5 @@
 #!/bin/python3
-#
-# Written by Panagiotis Chartas (t3l3machus)
-# https://github.com/t3l3machus
+
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import ssl, sys, argparse, base64, readline, uuid, re
